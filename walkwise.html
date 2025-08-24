@@ -1,272 +1,338 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, ShoppingCart, User, Globe, Play, Pause, Star, Filter, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Walk Wise — All Brands. One Store.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0a0b0e; --card:#12141a; --muted:#9aa4b2; --text:#e8edf5; --brand1:#6d8bff; --brand2:#b06cff; --glass: rgba(255,255,255,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;color:var(--text);background:linear-gradient(180deg,#06070a 0%,#0b0c10 40%,#0a0b0e 100%);}    
+    a{color:inherit;text-decoration:none}
+    .container{max-width:1200px;margin:0 auto;padding:0 20px}
 
-// --- Demo data ---
-const BRANDS = ["All", "Nike", "Adidas", "Puma", "Campus", "Reebok", "New Balance", "Asics"] as const;
-const CATEGORIES = ["All", "Men", "Women", "Kids"] as const;
+    /* Header */
+    header{position:sticky;top:0;z-index:50;backdrop-filter:saturate(120%) blur(10px);background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav{display:flex;gap:28px;align-items:center}
+    .brand{font-weight:900;letter-spacing:.5px;font-size:22px}
+    .brand .accent{background:linear-gradient(90deg,var(--brand1),var(--brand2));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .topbar{display:flex;align-items:center;justify-content:space-between;height:68px}
+    .pill{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.08)}
+    .pill input{background:transparent;border:0;outline:0;color:var(--text);width:200px}
+    .icon{opacity:.9}
+    .cta{padding:10px 16px;border-radius:14px;background:linear-gradient(90deg,var(--brand1),var(--brand2));font-weight:700}
+    .ghost{border:1px solid rgba(255,255,255,.18);background:transparent}
 
-const PRODUCTS = [
-  { id: 1, name: "Air Zoom Runner", brand: "Nike", category: "Men", price: 9999, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff" },
-  { id: 2, name: "Ultraboost 21", brand: "Adidas", category: "Men", price: 11999, img: "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77" },
-  { id: 3, name: "RS-X Reinvent", brand: "Puma", category: "Women", price: 7499, img: "https://images.unsplash.com/photo-1543508282-6319a3e2621f" },
-  { id: 4, name: "Campus North Star", brand: "Campus", category: "Women", price: 2499, img: "https://images.unsplash.com/photo-1542293787938-c9e299b88054" },
-  { id: 5, name: "Floatride Energy", brand: "Reebok", category: "Men", price: 6999, img: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2" },
-  { id: 6, name: "Fresh Foam 1080", brand: "New Balance", category: "Women", price: 10999, img: "https://images.unsplash.com/photo-1542291022-7a3c04b14c49" },
-  { id: 7, name: "Gel-Kayano 30", brand: "Asics", category: "Men", price: 12999, img: "https://images.unsplash.com/photo-1603808033192-6fce0132d2f5" },
-  { id: 8, name: "Campus Street Flex", brand: "Campus", category: "Kids", price: 1799, img: "https://images.unsplash.com/photo-1608231387042-66d1773070a5" },
-  { id: 9, name: "Air Force 1", brand: "Nike", category: "Women", price: 8999, img: "https://images.unsplash.com/photo-1519744792095-2f2205e87b6f" },
-  { id: 10, name: "Stan Smith", brand: "Adidas", category: "Women", price: 7999, img: "https://images.unsplash.com/photo-1519741497674-611481863552" },
-] as const;
+    /* Mobile nav (CSS only) */
+    #menu-toggle{display:none}
+    .hamburger{display:none;flex-direction:column;gap:4px}
+    .hamburger span{width:22px;height:2px;background:#fff;border-radius:2px}
+    .mobile-menu{display:none;}
+    #menu-toggle:checked ~ .mobile-menu{display:block;padding:12px 0;border-top:1px solid rgba(255,255,255,.1)}
 
-export default function WalkWise() {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [q, setQ] = useState("");
-  const [brand, setBrand] = useState<typeof BRANDS[number]>("All");
-  const [cat, setCat] = useState<typeof CATEGORIES[number]>("All");
-  const [muted, setMuted] = useState(true);
-  const [playing, setPlaying] = useState(true);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+    /* Hero */
+    .hero{position:relative;height:72vh;display:grid;place-items:end}
+    .hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.65}
+    .hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,6,10,0) 20%,rgba(5,6,10,.8) 70%,#0a0b0e 100%)}
+    .hero .content{position:relative;padding:0 20px 48px}
+    .title{font-size:clamp(32px,5vw,64px);font-weight:900;line-height:1.05;margin:0 0 10px}
+    .subtitle{max-width:720px;color:var(--muted)}
+    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    .btn{padding:12px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.04));backdrop-filter:blur(6px);font-weight:700}
+    .btn.primary{border:0;background:linear-gradient(90deg,var(--brand1),var(--brand2))}
 
-  const filtered = useMemo(() => {
-    return PRODUCTS.filter(p =>
-      (brand === "All" || p.brand === brand) &&
-      (cat === "All" || p.category === cat) &&
-      (q.trim() === "" || p.name.toLowerCase().includes(q.toLowerCase()))
-    );
-  }, [brand, cat, q]);
+    /* Brand strip */
+    .brands{padding:28px 0;border-bottom:1px solid rgba(255,255,255,.06);border-top:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02)}
+    .chips{display:flex;gap:10px;overflow:auto;padding-bottom:2px;scrollbar-width:none}
+    .chip{white-space:nowrap;padding:10px 14px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.08)}
 
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (playing) v.play().catch(() => {});
-    else v.pause();
-  }, [playing]);
+    /* Sections */
+    section{padding:56px 0}
+    .section-title{font-size:28px;font-weight:900;margin:0 0 18px}
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white">
-      {/* Announcement Bar */}
-      <div className="w-full text-center text-xs sm:text-sm bg-white/5 border-b border-white/10 py-2">
-        Free shipping over ₹1,999 • Easy 7-day returns • International shipping available
-      </div>
+    /* Grid cards */
+    .grid{display:grid;gap:18px}
+    @media(min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:1024px){.grid{grid-template-columns:repeat(4,1fr)}}
+    .card{border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03));border-radius:18px;overflow:hidden;transition:transform .35s ease, box-shadow .35s ease}
+    .card:hover{transform:translateY(-6px);box-shadow:0 14px 40px rgba(0,0,0,.45)}
+    .thumb{height:220px;background:#0f1116;display:block}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1);transition:transform .5s ease}
+    .card:hover .thumb img{transform:scale(1.06)}
+    .badge{position:absolute;top:12px;left:12px;background:linear-gradient(90deg,var(--brand1),var(--brand2));padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    .card-body{padding:14px 16px}
+    .price{font-weight:800;color:#b9c5ff}
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/5 border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <motion.a whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.96 }} href="#" className="text-2xl font-black tracking-tight select-none">WALK <span className="text-indigo-400">WISE</span></motion.a>
+    /* Promo split */
+    .split{display:grid;gap:18px;align-items:center}
+    @media(min-width:900px){.split{grid-template-columns:1.1fr .9fr}}
+    .video-box, .image-box{border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03));border-radius:22px;overflow:hidden}
+    .video-box video{width:100%;height:100%;display:block}
+    .list{display:grid;gap:10px;margin-top:10px}
+    .list .item{padding:12px 14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:var(--glass)}
 
-          {/* Nav */}
-          <nav className="hidden md:flex items-center gap-7 text-sm text-slate-200">
-            {CATEGORIES.map((c) => (
-              <button key={c} onClick={() => setCat(c)} className={`hover:text-white ${cat === c ? "text-white" : ""}`}>{c}</button>
-            ))}
-            <button onClick={() => setBrand("All")} className="hover:text-white">All Brands</button>
-          </nav>
+    /* Testimonials (CSS marquee) */
+    .tape{overflow:hidden;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03))}
+    .track{display:flex;gap:16px;padding:16px;animation:scroll 22s linear infinite}
+    .review{min-width:260px;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;background:var(--glass)}
+    @keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            <div className="relative hidden sm:block">
-              <AnimatePresence>
-                {searchOpen && (
-                  <motion.input
-                    key="search"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 220, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="Search shoes…"
-                    className="rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm focus:outline-none"
-                  />
-                )}
-              </AnimatePresence>
-            </div>
-            <button className="p-2" onClick={() => setSearchOpen(s => !s)} aria-label="Toggle search"><Search /></button>
-            <button className="p-2" aria-label="Locale"><Globe /></button>
-            <button className="p-2" aria-label="Account"><User /></button>
-            <Button className="rounded-2xl"><ShoppingCart className="mr-2 h-4 w-4"/> Cart</Button>
-          </div>
-        </div>
-      </header>
+    /* Footer */
+    footer{border-top:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
+    .cols{display:grid;gap:24px}
+    @media(min-width:800px){.cols{grid-template-columns:2fr 1fr 1fr 1.2fr}}
+    .muted{color:var(--muted)}
 
-      {/* HERO with background video */}
-      <section className="relative overflow-hidden">
-        <video
-          ref={videoRef}
-          className="w-full h-[72vh] object-cover opacity-70"
-          loop
-          muted={muted}
-          playsInline
-          src="https://cdn.coverr.co/videos/coverr-a-pair-of-running-shoes-7595/1080p.mp4"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        <div className="absolute inset-0 flex items-end">
-          <div className="mx-auto max-w-7xl px-6 pb-10 w-full">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-3xl">
-              <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight">Step into the future with <span className="text-indigo-400">Walk Wise</span></h1>
-              <p className="mt-3 text-slate-200/90">Shop all your favorite brands in one place. Precision design, comfort engineering, and street-ready style.</p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button className="rounded-2xl">Shop New Drops</Button>
-                <Button variant="outline" className="rounded-2xl border-white/30 text-white">Explore Collections</Button>
-                <div className="flex items-center gap-2 ml-auto">
-                  <Button size="icon" variant="outline" className="rounded-full border-white/30 text-white" onClick={() => setMuted(m => !m)}>{muted ? <X className="h-4 w-4"/> : <></>}<span className="sr-only">Toggle Mute</span></Button>
-                  <Button size="icon" variant="outline" className="rounded-full border-white/30 text-white" onClick={() => setPlaying(p => !p)}>{playing ? <Pause className="h-4 w-4"/> : <Play className="h-4 w-4"/>}</Button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+    /* Responsive tweaks */
+    @media(max-width:900px){
+      .nav{display:none}
+      .hamburger{display:flex}
+      .pill input{width:120px}
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container topbar">
+      <div class="brand">WALK <span class="accent">WISE</span></div>
 
-      {/* Brand carousel / filters */}
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl sm:text-3xl font-extrabold">Shop by Brand</h2>
-          <div className="flex items-center gap-2 text-sm opacity-80"><Filter className="h-4 w-4"/> Quick Filters</div>
-        </div>
-        <div className="relative">
-          <div className="flex overflow-x-auto no-scrollbar gap-3 py-2 pr-2">
-            {BRANDS.map((b) => (
-              <button
-                key={b}
-                onClick={() => setBrand(b)}
-                className={`px-4 py-2 rounded-full border ${brand === b ? "bg-indigo-500 border-indigo-500" : "bg-white/5 border-white/10 hover:bg-white/10"}`}
-              >
-                {b}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+      <!-- Desktop nav -->
+      <nav class="nav">
+        <a href="#men">Men</a>
+        <a href="#women">Women</a>
+        <a href="#kids">Kids</a>
+        <a href="#new">New</a>
+        <a href="#sale">Sale</a>
+        <span class="pill">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input placeholder="Search shoes…" aria-label="Search" />
+        </span>
+        <a class="cta" href="#">Cart</a>
+      </nav>
 
-      {/* Featured video mini section */}
-      <section className="mx-auto max-w-7xl px-6 pb-4">
-        <div className="grid md:grid-cols-2 gap-6 items-center rounded-3xl bg-gradient-to-r from-indigo-600/20 to-fuchsia-600/20 p-6 border border-white/10">
-          <video className="w-full h-64 object-cover rounded-2xl" autoPlay loop muted playsInline src="https://cdn.coverr.co/videos/coverr-athletes-lacing-shoes-5582/1080p.mp4" />
-          <div>
-            <h3 className="text-2xl sm:text-3xl font-extrabold">Performance meets comfort</h3>
-            <p className="text-slate-200/90 mt-2">Engineered foams, breathable uppers, and energy return soles—experience the science behind every step.</p>
-            <div className="mt-4 flex gap-3">
-              <Badge className="bg-white/10 border border-white/10">Energy Return</Badge>
-              <Badge className="bg-white/10 border border-white/10">Breathable</Badge>
-              <Badge className="bg-white/10 border border-white/10">Durable</Badge>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Products grid */}
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl sm:text-3xl font-extrabold">Just Dropped</h2>
-          <div className="text-sm text-slate-300">{filtered.length} results</div>
-        </div>
-        {filtered.length === 0 ? (
-          <div className="text-center text-slate-400 py-16">No products match your filters.</div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filtered.map((p) => (
-              <motion.div key={p.id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} whileHover={{ y: -6 }}>
-                <Card className="bg-white/5 border-white/10 rounded-2xl overflow-hidden">
-                  <div className="relative">
-                    <img src={`${p.img}?auto=format&fit=crop&w=800&q=80`} alt={p.name} className="h-56 w-full object-cover"/>
-                    <div className="absolute top-2 left-2">
-                      <Badge className="bg-indigo-500/90">{p.brand}</Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="font-semibold">{p.name}</h3>
-                        <div className="text-slate-300 text-sm">{p.category}</div>
-                      </div>
-                      <div className="text-indigo-300 font-bold">₹{p.price.toLocaleString("en-IN")}</div>
-                    </div>
-                    <div className="mt-3 flex items-center gap-1 text-yellow-400">
-                      {[...Array(5)].map((_, i) => <Star key={i} className={`h-4 w-4 ${i < 4 ? "fill-current" : ""}`} />)}
-                      <span className="ml-1 text-xs text-slate-300">(248)</span>
-                    </div>
-                    <div className="mt-4 flex gap-2">
-                      <Button className="rounded-xl flex-1">Add to Cart</Button>
-                      <Button variant="outline" className="rounded-xl border-white/30 text-white">Quick View</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Testimonials slider (auto-scroll) */}
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <h3 className="text-2xl sm:text-3xl font-extrabold mb-6">What runners say</h3>
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-          <motion.div
-            className="flex gap-6 py-6 px-6"
-            animate={{ x: [0, -600, 0] }}
-            transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-          >
-            {[
-              { name: "Aarav", text: "Super comfy and stylish—my daily wear now." },
-              { name: "Nisha", text: "The cushioning is next-level. Perfect for long runs." },
-              { name: "Zoya", text: "Love the design language. Minimal yet premium." },
-              { name: "Rahul", text: "Fast delivery and authentic brands. 10/10!" },
-            ].map((t, i) => (
-              <div key={i} className="min-w-[260px] bg-white/5 border border-white/10 rounded-2xl p-5">
-                <div className="font-semibold">{t.name}</div>
-                <div className="text-slate-300 text-sm mt-2">“{t.text}”</div>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-6 py-10 grid sm:grid-cols-2 md:grid-cols-4 gap-8 text-sm text-slate-300">
-          <div>
-            <div className="text-xl font-black">WALK <span className="text-indigo-400">WISE</span></div>
-            <p className="mt-2">All brands • One destination • 24x7 support</p>
-          </div>
-          <div>
-            <div className="font-semibold text-white mb-2">Shop</div>
-            <ul className="space-y-1">
-              <li>Men</li>
-              <li>Women</li>
-              <li>Kids</li>
-              <li>New Arrivals</li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-semibold text-white mb-2">Support</div>
-            <ul className="space-y-1">
-              <li>Orders & Returns</li>
-              <li>Shipping</li>
-              <li>FAQ</li>
-              <li>Contact</li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-semibold text-white mb-2">Stay in the loop</div>
-            <div className="flex gap-2">
-              <input className="w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-white placeholder:text-slate-400" placeholder="Your email"/>
-              <Button className="rounded-xl">Subscribe</Button>
-            </div>
-          </div>
-        </div>
-        <p className="text-center text-xs text-slate-500 pb-8">© {new Date().getFullYear()} Walk Wise. All rights reserved.</p>
-      </footer>
-
-      <style jsx global>{`
-        .no-scrollbar::-webkit-scrollbar{ display:none; }
-        .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-      `}</style>
+      <!-- Mobile only -->
+      <label class="hamburger" for="menu-toggle" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </label>
+      <input id="menu-toggle" type="checkbox" />
     </div>
-  );
-}
+
+    <div class="container mobile-menu">
+      <div class="chips">
+        <a class="chip" href="#men">Men</a>
+        <a class="chip" href="#women">Women</a>
+        <a class="chip" href="#kids">Kids</a>
+        <a class="chip" href="#new">New</a>
+        <a class="chip" href="#sale">Sale</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero with background video -->
+  <section class="hero">
+    <video autoplay muted loop playsinline src="https://cdn.coverr.co/videos/coverr-a-pair-of-running-shoes-7595/1080p.mp4"></video>
+    <div class="shade"></div>
+    <div class="container content">
+      <h1 class="title">All Brands. One Destination.</h1>
+      <p class="subtitle">Shop Nike, Adidas, Puma, Campus, and more—curated drops, clean design, and comfort-first engineering. Built to feel award‑winning, even without JavaScript.</p>
+      <div class="row">
+        <a class="btn primary" href="#new">Shop New Drops</a>
+        <a class="btn" href="#brands">Explore Brands</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Brand strip -->
+  <section id="brands" class="brands">
+    <div class="container">
+      <div class="chips">
+        <span class="chip">All</span>
+        <span class="chip">Nike</span>
+        <span class="chip">Adidas</span>
+        <span class="chip">Puma</span>
+        <span class="chip">Campus</span>
+        <span class="chip">Reebok</span>
+        <span class="chip">New Balance</span>
+        <span class="chip">Asics</span>
+        <span class="chip">Skechers</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- New Arrivals / Grid -->
+  <section id="new">
+    <div class="container">
+      <h2 class="section-title">Just Dropped</h2>
+      <div class="grid">
+        <!-- Card 1 -->
+        <article class="card">
+          <div class="thumb"><img alt="Nike shoe" src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">Nike</span>
+            <h3>Air Zoom Runner</h3>
+            <p class="muted">Men • Road Running</p>
+            <p class="price">₹9,999</p>
+          </div>
+        </article>
+        <!-- Card 2 -->
+        <article class="card">
+          <div class="thumb"><img alt="Adidas shoe" src="https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">Adidas</span>
+            <h3>Ultraboost 21</h3>
+            <p class="muted">Men • Cushioned</p>
+            <p class="price">₹11,999</p>
+          </div>
+        </article>
+        <!-- Card 3 -->
+        <article class="card">
+          <div class="thumb"><img alt="Puma shoe" src="https://images.unsplash.com/photo-1543508282-6319a3e2621f?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">Puma</span>
+            <h3>RS-X Reinvent</h3>
+            <p class="muted">Women • Lifestyle</p>
+            <p class="price">₹7,499</p>
+          </div>
+        </article>
+        <!-- Card 4 -->
+        <article class="card">
+          <div class="thumb"><img alt="Campus shoe" src="https://images.unsplash.com/photo-1542293787938-c9e299b88054?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">Campus</span>
+            <h3>North Star</h3>
+            <p class="muted">Women • Everyday</p>
+            <p class="price">₹2,499</p>
+          </div>
+        </article>
+        <!-- Card 5 -->
+        <article class="card">
+          <div class="thumb"><img alt="Reebok shoe" src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">Reebok</span>
+            <h3>Floatride Energy</h3>
+            <p class="muted">Men • Daily Trainer</p>
+            <p class="price">₹6,999</p>
+          </div>
+        </article>
+        <!-- Card 6 -->
+        <article class="card">
+          <div class="thumb"><img alt="New Balance shoe" src="https://images.unsplash.com/photo-1542291022-7a3c04b14c49?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">New Balance</span>
+            <h3>Fresh Foam 1080</h3>
+            <p class="muted">Women • Max Cushion</p>
+            <p class="price">₹10,999</p>
+          </div>
+        </article>
+        <!-- Card 7 -->
+        <article class="card">
+          <div class="thumb"><img alt="Asics shoe" src="https://images.unsplash.com/photo-1603808033192-6fce0132d2f5?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">Asics</span>
+            <h3>Gel-Kayano 30</h3>
+            <p class="muted">Men • Stability</p>
+            <p class="price">₹12,999</p>
+          </div>
+        </article>
+        <!-- Card 8 -->
+        <article class="card">
+          <div class="thumb"><img alt="Campus kids shoe" src="https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=1000&q=80"></div>
+          <div class="card-body">
+            <span class="badge">Campus</span>
+            <h3>Street Flex</h3>
+            <p class="muted">Kids • Everyday</p>
+            <p class="price">₹1,799</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Promo Split -->
+  <section>
+    <div class="container split">
+      <div class="video-box">
+        <video autoplay muted loop playsinline src="https://cdn.coverr.co/videos/coverr-athletes-lacing-shoes-5582/1080p.mp4"></video>
+      </div>
+      <div class="image-box" style="padding:22px">
+        <h2 class="section-title">Performance Meets Comfort</h2>
+        <p class="muted">From energy‑return midsoles to breathable uppers—discover tech that powers every stride. Built for speed, engineered for comfort.</p>
+        <div class="list">
+          <div class="item">Energy Return • Springy foams reduce fatigue</div>
+          <div class="item">Breathable Knit • All‑day airflow</div>
+          <div class="item">Durable Outsoles • Built to last</div>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <a class="btn primary" href="#">Explore Technology</a>
+          <a class="btn" href="#">Compare Models</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">What runners say</h2>
+      <div class="tape">
+        <div class="track">
+          <div class="review"><strong>Aarav</strong><br><span class="muted">“Super comfy and stylish—my daily wear now.”</span></div>
+          <div class="review"><strong>Nisha</strong><br><span class="muted">“Cushioning is next‑level. Perfect for long runs.”</span></div>
+          <div class="review"><strong>Zoya</strong><br><span class="muted">“Minimal yet premium design. Love it.”</span></div>
+          <div class="review"><strong>Rahul</strong><br><span class="muted">“Fast delivery and authentic brands. 10/10!”</span></div>
+          <!-- duplicate for seamless loop -->
+          <div class="review"><strong>Aarav</strong><br><span class="muted">“Super comfy and stylish—my daily wear now.”</span></div>
+          <div class="review"><strong>Nisha</strong><br><span class="muted">“Cushioning is next‑level. Perfect for long runs.”</span></div>
+          <div class="review"><strong>Zoya</strong><br><span class="muted">“Minimal yet premium design. Love it.”</span></div>
+          <div class="review"><strong>Rahul</strong><br><span class="muted">“Fast delivery and authentic brands. 10/10!”</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container" style="padding:38px 20px">
+      <div class="cols">
+        <div>
+          <div class="brand" style="font-size:24px">WALK <span class="accent">WISE</span></div>
+          <p class="muted">All brands • One destination • 24×7 support</p>
+        </div>
+        <div>
+          <strong>Shop</strong>
+          <div class="list">
+            <a class="item" href="#men">Men</a>
+            <a class="item" href="#women">Women</a>
+            <a class="item" href="#kids">Kids</a>
+            <a class="item" href="#new">New Arrivals</a>
+          </div>
+        </div>
+        <div>
+          <strong>Support</strong>
+          <div class="list">
+            <a class="item" href="#">Orders & Returns</a>
+            <a class="item" href="#">Shipping</a>
+            <a class="item" href="#">FAQ</a>
+            <a class="item" href="#">Contact</a>
+          </div>
+        </div>
+        <div>
+          <strong>Newsletter</strong>
+          <p class="muted">Get the latest drops and deals.</p>
+          <div class="row">
+            <input placeholder="Your email" style="flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:var(--glass);color:var(--text)" />
+            <a class="btn primary" href="#">Subscribe</a>
+          </div>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:24px;text-align:center;font-size:12px">© 2025 Walk Wise. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>
